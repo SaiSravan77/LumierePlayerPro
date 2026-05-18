@@ -59,7 +59,7 @@ class MainActivity : AppCompatActivity() {
     private var currentUri: Uri? = null
     private var playbackSpeed = 1.0f
     private var aspectRatioIndex = 0
-    private val aspectRatios = listOf("Fit", "Fill", "4:3", "16:9", "21:9")
+    private val aspectRatios = listOf("Fit", "Fill", "Stretch", "16:9", "Zoom")
 
     // Panels
     private var enhancePanelVisible = false
@@ -111,7 +111,7 @@ class MainActivity : AppCompatActivity() {
         binding.emptyState.setOnClickListener { requestFileOpen() }
     }
 
-    // ─── VIDEO LOADING ───────────────────────────────────────
+    // â”€â”€â”€ VIDEO LOADING â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     private fun loadVideo(uri: Uri) {
         currentUri = uri
@@ -131,7 +131,7 @@ class MainActivity : AppCompatActivity() {
         showControls()
     }
 
-    // ─── PLAYER CALLBACKS ────────────────────────────────────
+    // â”€â”€â”€ PLAYER CALLBACKS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     private fun setupPlayerCallbacks() {
         playerManager.onPlaybackStateChanged = { state ->
@@ -158,7 +158,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // ─── CONTROLS SETUP ──────────────────────────────────────
+    // â”€â”€â”€ CONTROLS SETUP â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     private fun setupControls() {
         // Play/Pause
@@ -204,7 +204,7 @@ class MainActivity : AppCompatActivity() {
         binding.btnLock.setOnClickListener { toggleControlsLock() }
     }
 
-    // ─── GESTURES ────────────────────────────────────────────
+    // â”€â”€â”€ GESTURES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     private fun setupGestures() {
         gestureController = GestureController(
@@ -223,7 +223,8 @@ class MainActivity : AppCompatActivity() {
             onDoubleTap = { togglePlay() },
             onShowOverlay = { type, value, label ->
                 showGestureOverlay(label, value)
-            }
+            },
+            getCurrentPosition = { playerManager.player.currentPosition }
         )
 
         binding.playerView.setOnTouchListener { _, event ->
@@ -232,7 +233,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // ─── ENHANCE PANEL ───────────────────────────────────────
+    // â”€â”€â”€ ENHANCE PANEL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     private fun setupEnhancePanel() {
         val p = playerManager.params
@@ -304,7 +305,7 @@ class MainActivity : AppCompatActivity() {
         setupEnhancePanel() // Refresh UI
     }
 
-    // ─── EQ PANEL ────────────────────────────────────────────
+    // â”€â”€â”€ EQ PANEL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     private fun setupEqPanel() {
         val eq = playerManager.equalizer ?: return
@@ -353,7 +354,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // ─── DIALOGS ─────────────────────────────────────────────
+    // â”€â”€â”€ DIALOGS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     private fun showSpeedDialog() {
         val speeds = listOf(0.25f, 0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 1.75f, 2.0f)
@@ -365,7 +366,7 @@ class MainActivity : AppCompatActivity() {
             .setSingleChoiceItems(labels, current) { dialog, which ->
                 playbackSpeed = speeds[which]
                 playerManager.setPlaybackSpeed(playbackSpeed)
-                binding.btnSpeed.text = if (playbackSpeed == 1.0f) "1×" else "${playbackSpeed}×"
+                binding.btnSpeed.text = if (playbackSpeed == 1.0f) "1Ã—" else "${playbackSpeed}Ã—"
                 dialog.dismiss()
             }.show()
     }
@@ -394,7 +395,7 @@ class MainActivity : AppCompatActivity() {
             }.show()
     }
 
-    // ─── CONTROLS VISIBILITY ─────────────────────────────────
+    // â”€â”€â”€ CONTROLS VISIBILITY â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     private fun toggleControls() { if (controlsVisible) hideControls() else showControls() }
     private fun togglePlay() {
@@ -449,30 +450,29 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // ─── ASPECT RATIO ────────────────────────────────────────
+    // â”€â”€â”€ ASPECT RATIO â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     private fun cycleAspectRatio() {
         aspectRatioIndex = (aspectRatioIndex + 1) % aspectRatios.size
         binding.btnAspect.text = aspectRatios[aspectRatioIndex]
         when (aspectRatioIndex) {
             0 -> binding.playerView.resizeMode = androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_FIT
-            1 -> binding.playerView.resizeMode = androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_ZOOM
+            1 -> binding.playerView.resizeMode = androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_FILL
             2 -> binding.playerView.resizeMode = androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_FIXED_WIDTH
-            3 -> binding.playerView.resizeMode = androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_FILL
+            3 -> binding.playerView.resizeMode = androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_FIT // Fallback for 16:9 handled by view
             4 -> binding.playerView.resizeMode = androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_ZOOM
         }
     }
 
-    // ─── SCREENSHOT ──────────────────────────────────────────
+    // â”€â”€â”€ SCREENSHOT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     private fun takeScreenshot() {
         lifecycleScope.launch {
             try {
-                val bitmap = Bitmap.createBitmap(
-                    binding.playerView.width, binding.playerView.height, Bitmap.Config.ARGB_8888
-                )
+                val view = binding.playerView.videoSurfaceView as? SurfaceView ?: binding.playerView
+                val bitmap = Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
                 val canvas = android.graphics.Canvas(bitmap)
-                binding.playerView.draw(canvas)
+                view.draw(canvas)
                 val uri = ScreenshotHelper.saveFrame(this@MainActivity, bitmap)
                 withContext(Dispatchers.Main) {
                     if (uri != null) Toast.makeText(this@MainActivity, "Screenshot saved", Toast.LENGTH_SHORT).show()
@@ -486,7 +486,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // ─── PICTURE IN PICTURE ──────────────────────────────────
+    // â”€â”€â”€ PICTURE IN PICTURE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     override fun onUserLeaveHint() {
         super.onUserLeaveHint()
@@ -497,7 +497,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // ─── FULLSCREEN ──────────────────────────────────────────
+    // â”€â”€â”€ FULLSCREEN â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     private fun toggleFullscreen() {
         isFullscreen = !isFullscreen
@@ -532,7 +532,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // ─── OVERLAY ─────────────────────────────────────────────
+    // â”€â”€â”€ OVERLAY â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     private fun showGestureOverlay(label: String, value: Float) {
         binding.gestureOverlay.tvOverlayLabel.text = label
@@ -547,7 +547,7 @@ class MainActivity : AppCompatActivity() {
         }, 800)
     }
 
-    // ─── HELPERS ─────────────────────────────────────────────
+    // â”€â”€â”€ HELPERS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     private fun updatePlayPauseIcon(isPlaying: Boolean) {
         binding.btnPlayPause.setImageResource(if (isPlaying) R.drawable.ic_pause else R.drawable.ic_play)
@@ -571,6 +571,7 @@ class MainActivity : AppCompatActivity() {
     private fun openPlaylistPicker() { multiFilePicker.launch("video/*") }
 
     private fun saveWatchHistory() {
+        if (!::playerManager.isInitialized) return
         val uri = currentUri ?: return
         lifecycleScope.launch(Dispatchers.IO) {
             db.watchHistoryDao().upsert(WatchHistory(
@@ -582,12 +583,12 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // ─── LIFECYCLE ───────────────────────────────────────────
+    // â”€â”€â”€ LIFECYCLE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     override fun onPause() {
         super.onPause()
         saveWatchHistory()
-        if (!isInPictureInPictureMode) playerManager.player.pause()
+        if (::playerManager.isInitialized && !isInPictureInPictureMode) playerManager.player.pause()
     }
 
     override fun onResume() {
@@ -598,14 +599,14 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         handler.removeCallbacksAndMessages(null)
-        playerManager.release()
+        if (::playerManager.isInitialized) playerManager.release()
     }
 
     private fun setupAIExtraction() {
         lifecycleScope.launch {
             while (isActive) {
                 delay(1000)
-                if (playerManager.player.isPlaying && (playerManager.params.faceEnhance || playerManager.params.sceneAware)) {
+                if (::playerManager.isInitialized && playerManager.player.isPlaying && (playerManager.params.faceEnhance || playerManager.params.sceneAware)) {
                     extractFrameForAI()
                 }
             }
@@ -613,8 +614,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun extractFrameForAI() {
-        val surfaceView = binding.playerView.videoSurfaceView as? android.view.SurfaceView ?: return
-        if (surfaceView.holder.surface.isValid) {
+        val surfaceView = binding.playerView.videoSurfaceView as? SurfaceView ?: return
+        if (surfaceView.holder.surface.isValid && surfaceView.width > 0 && surfaceView.height > 0) {
             val bitmap = Bitmap.createBitmap(surfaceView.width, surfaceView.height, Bitmap.Config.ARGB_8888)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                 android.view.PixelCopy.request(surfaceView, bitmap, { result ->
