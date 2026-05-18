@@ -116,10 +116,10 @@ class LumiereShaderProgram(private val params: EnhanceParams) : GlShaderProgram 
         }
     """.trimIndent()
 
-    override fun configure(w: Int, h: Int): Pair<Int, Int> {
+    override fun configure(w: Int, h: Int): androidx.media3.common.util.Size {
         texW = w; texH = h
         glProgram = GlProgram(VERT, FRAG)
-        return Pair(w, h)
+        return androidx.media3.common.util.Size(w, h)
     }
 
     override fun drawFrame(texId: Int, pts: Long) {
