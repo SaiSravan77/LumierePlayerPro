@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="wrap_content"
+    android:orientation="vertical" android:gravity="center"
+    android:background="#AA000000" android:padding="12dp">
+    <TextView android:id="@+id/tvOverlayLabel"
+        android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:text="🔊 80%" android:textColor="#ffffff" android:textSize="16sp"
+        android:layout_marginBottom="6dp"/>
+    <ProgressBar android:id="@+id/progressOverlay"
+        style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+        android:layout_width="120dp" android:layout_height="4dp"
+        android:progressTint="#c9a84c" android:progress="80"/>
+</LinearLayout>

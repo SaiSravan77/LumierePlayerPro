@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="260dp"
+    android:background="#E50e0e0e">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="14dp">
+
+        <!-- Header row -->
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginBottom="10dp">
+            <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+                android:text="4K REMASTER ENGINE" android:textColor="#c9a84c" android:textSize="11sp" android:letterSpacing="0.2"/>
+            <Switch android:id="@+id/switchEnhance" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:checked="true" android:thumbTint="#c9a84c" android:trackTint="#3a2e10"/>
+        </LinearLayout>
+
+        <!-- AI toggles -->
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginBottom="6dp">
+            <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+                android:text="Face Enhancement (MediaPipe)" android:textColor="#99e8e0d0" android:textSize="10sp"/>
+            <Switch android:id="@+id/switchFace" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:checked="true" android:thumbTint="#c9a84c" android:trackTint="#3a2e10"/>
+        </LinearLayout>
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginBottom="6dp">
+            <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+                android:text="Scene-Aware Enhancement (TFLite)" android:textColor="#99e8e0d0" android:textSize="10sp"/>
+            <Switch android:id="@+id/switchScene" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:checked="true" android:thumbTint="#c9a84c" android:trackTint="#3a2e10"/>
+        </LinearLayout>
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginBottom="6dp">
+            <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+                android:text="HDR Simulation" android:textColor="#99e8e0d0" android:textSize="10sp"/>
+            <Switch android:id="@+id/switchHdr" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:thumbTint="#c9a84c" android:trackTint="#3a2e10"/>
+        </LinearLayout>
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginBottom="10dp">
+            <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+                android:text="Deinterlace (VHS/Broadcast)" android:textColor="#99e8e0d0" android:textSize="10sp"/>
+            <Switch android:id="@+id/switchDeint" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:thumbTint="#c9a84c" android:trackTint="#3a2e10"/>
+        </LinearLayout>
+
+        <!-- Presets -->
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="PRESETS" android:textColor="#6a6055" android:textSize="9sp" android:letterSpacing="0.2" android:layout_marginBottom="6dp"/>
+        <HorizontalScrollView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:scrollbars="none" android:layout_marginBottom="12dp">
+            <LinearLayout android:id="@+id/presetsRow" android:layout_width="wrap_content"
+                android:layout_height="wrap_content" android:orientation="horizontal"/>
+        </HorizontalScrollView>
+
+        <!-- Sliders in 2 columns -->
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1" android:orientation="vertical" android:paddingEnd="8dp">
+                <include layout="@layout/slider_item" android:id="@+id/sliderSharpness"/>
+                <include layout="@layout/slider_item" android:id="@+id/sliderContrast"/>
+                <include layout="@layout/slider_item" android:id="@+id/sliderSaturation"/>
+                <include layout="@layout/slider_item" android:id="@+id/sliderWarmth"/>
+            </LinearLayout>
+            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1" android:orientation="vertical" android:paddingStart="8dp">
+                <include layout="@layout/slider_item" android:id="@+id/sliderBrightness"/>
+                <include layout="@layout/slider_item" android:id="@+id/sliderNoise"/>
+                <include layout="@layout/slider_item" android:id="@+id/sliderShadow"/>
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+</ScrollView>
