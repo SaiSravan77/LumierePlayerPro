@@ -25,7 +25,8 @@ class GestureController(
     private val onBrightnessChange: (delta: Float) -> Unit,
     private val onSingleTap: () -> Unit,
     private val onDoubleTap: () -> Unit,
-    private val onShowOverlay: (type: Int, value: Float, label: String) -> Unit
+    private val onShowOverlay: (type: Int, value: Float, label: String) -> Unit,
+    private val getCurrentPosition: () -> Long
 ) {
 
     companion object {
@@ -36,6 +37,8 @@ class GestureController(
 
     private val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
     private var currentBrightness = 0.5f
+    private var seekBasePosition = 0L
+    private var isSeeking = false
 
     private val gestureDetector = GestureDetector(context, object : GestureDetector.SimpleOnGestureListener() {
 
@@ -47,29 +50,39 @@ class GestureController(
             onDoubleTap(); return true
         }
 
+        override fun onDown(e: MotionEvent): Boolean {
+            isSeeking = false
+            return true
+        }
+
         override fun onScroll(e1: MotionEvent?, e2: MotionEvent, dX: Float, dY: Float): Boolean {
             val e1n = e1 ?: return false
             val dx = e2.x - e1n.x
             val dy = e2.y - e1n.y
 
-            return if (abs(dx) > abs(dy) * 1.5f) {
+            return if (abs(dx) > abs(dy) * 1.5f || isSeeking) {
                 // Horizontal: seek
+                if (!isSeeking) {
+                    isSeeking = true
+                    seekBasePosition = getCurrentPosition()
+                }
                 val seekDelta = (dx * 150).toLong() // 150ms per pixel
-                onSeek(seekDelta)
-                val secs = abs(seekDelta) / 1000
-                onShowOverlay(OVERLAY_SEEK, dx, if (dx > 0) "+${secs}s" else "-${secs}s")
+                onSeek(seekBasePosition + seekDelta - getCurrentPosition())
+                val secs = abs(dx * 150).toLong() / 1000
+                onShowOverlay(OVERLAY_SEEK, dx / view.width, if (dx > 0) "+${secs}s" else "-${secs}s")
                 true
             } else {
                 // Vertical: left=brightness, right=volume
                 val normalized = -dy / view.height
                 if (e1n.x < view.width / 2f) {
                     // Brightness
-                    onBrightnessChange(normalized * 0.5f)
-                    currentBrightness = (currentBrightness + normalized * 0.5f).coerceIn(0f, 1f)
-                    onShowOverlay(OVERLAY_BRIGHTNESS, currentBrightness, "☀ ${(currentBrightness * 100).toInt()}%")
+                    onBrightnessChange(normalized * 0.05f)
+                    val lp = (context as? android.app.Activity)?.window?.attributes
+                    val cur = lp?.screenBrightness ?: 0.5f
+                    onShowOverlay(OVERLAY_BRIGHTNESS, cur.coerceIn(0f, 1f), "☀ ${(cur.coerceIn(0f, 1f) * 100).toInt()}%")
                 } else {
                     // Volume
-                    onVolumeChange(normalized)
+                    onVolumeChange(normalized * 0.1f)
                     val maxVol = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC).toFloat()
                     val curVol = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC).toFloat()
                     onShowOverlay(OVERLAY_VOLUME, curVol / maxVol, "🔊 ${(curVol / maxVol * 100).toInt()}%")
