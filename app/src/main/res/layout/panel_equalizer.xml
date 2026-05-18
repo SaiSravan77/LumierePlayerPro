@@ -4,96 +4,241 @@
     android:layout_width="match_parent"
     android:layout_height="240dp"
     android:background="#E50e0e0e">
-    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:orientation="vertical" android:padding="14dp">
 
-        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:text="EQUALIZER" android:textColor="#c9a84c" android:textSize="11sp"
-            android:letterSpacing="0.2" android:layout_marginBottom="10dp"/>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="14dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="EQUALIZER"
+            android:textColor="#c9a84c"
+            android:textSize="11sp"
+            android:letterSpacing="0.2"
+            android:layout_marginBottom="10dp" />
 
         <!-- EQ Presets -->
-        <HorizontalScrollView android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:scrollbars="none" android:layout_marginBottom="10dp">
-            <LinearLayout android:id="@+id/eqPresetsRow" android:layout_width="wrap_content"
-                android:layout_height="wrap_content" android:orientation="horizontal"/>
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:scrollbars="none"
+            android:layout_marginBottom="10dp">
+
+            <LinearLayout
+                android:id="@+id/eqPresetsRow"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal" />
         </HorizontalScrollView>
 
         <!-- 5 Band EQ -->
-        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:orientation="horizontal" android:gravity="center_vertical">
-            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
-                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="60Hz"
-                    android:textColor="#6a6055" android:textSize="9sp" android:gravity="center"/>
-                <com.google.android.material.slider.Slider android:id="@+id/band60"
-                    android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:valueFrom="-15" android:valueTo="15" android:value="0"
-                    android:rotation="270" android:layout_height="80dp"
-                    app:thumbColor="#c9a84c" app:trackColorActive="#c9a84c"/>
-            </LinearLayout>
-            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
-                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="230Hz"
-                    android:textColor="#6a6055" android:textSize="9sp" android:gravity="center"/>
-                <com.google.android.material.slider.Slider android:id="@+id/band230"
-                    android:layout_width="match_parent" android:layout_height="80dp"
-                    android:valueFrom="-15" android:valueTo="15" android:value="0"
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <!-- 60Hz -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="60Hz"
+                    android:textColor="#6a6055"
+                    android:textSize="9sp"
+                    android:gravity="center" />
+
+                <com.google.android.material.slider.Slider
+                    android:id="@+id/band60"
+                    android:layout_width="match_parent"
+                    android:layout_height="80dp"
+                    android:valueFrom="-15"
+                    android:valueTo="15"
+                    android:value="0"
                     android:rotation="270"
-                    app:thumbColor="#c9a84c" app:trackColorActive="#c9a84c"/>
+                    app:thumbColor="#c9a84c"
+                    app:trackColorActive="#c9a84c" />
             </LinearLayout>
-            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
-                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="910Hz"
-                    android:textColor="#6a6055" android:textSize="9sp" android:gravity="center"/>
-                <com.google.android.material.slider.Slider android:id="@+id/band910"
-                    android:layout_width="match_parent" android:layout_height="80dp"
-                    android:valueFrom="-15" android:valueTo="15" android:value="0"
+
+            <!-- 230Hz -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="230Hz"
+                    android:textColor="#6a6055"
+                    android:textSize="9sp"
+                    android:gravity="center" />
+
+                <com.google.android.material.slider.Slider
+                    android:id="@+id/band230"
+                    android:layout_width="match_parent"
+                    android:layout_height="80dp"
+                    android:valueFrom="-15"
+                    android:valueTo="15"
+                    android:value="0"
                     android:rotation="270"
-                    app:thumbColor="#c9a84c" app:trackColorActive="#c9a84c"/>
+                    app:thumbColor="#c9a84c"
+                    app:trackColorActive="#c9a84c" />
             </LinearLayout>
-            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
-                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="3.6kHz"
-                    android:textColor="#6a6055" android:textSize="9sp" android:gravity="center"/>
-                <com.google.android.material.slider.Slider android:id="@+id/band3600"
-                    android:layout_width="match_parent" android:layout_height="80dp"
-                    android:valueFrom="-15" android:valueTo="15" android:value="0"
+
+            <!-- 910Hz -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="910Hz"
+                    android:textColor="#6a6055"
+                    android:textSize="9sp"
+                    android:gravity="center" />
+
+                <com.google.android.material.slider.Slider
+                    android:id="@+id/band910"
+                    android:layout_width="match_parent"
+                    android:layout_height="80dp"
+                    android:valueFrom="-15"
+                    android:valueTo="15"
+                    android:value="0"
                     android:rotation="270"
-                    app:thumbColor="#c9a84c" app:trackColorActive="#c9a84c"/>
+                    app:thumbColor="#c9a84c"
+                    app:trackColorActive="#c9a84c" />
             </LinearLayout>
-            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
-                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="14kHz"
-                    android:textColor="#6a6055" android:textSize="9sp" android:gravity="center"/>
-                <com.google.android.material.slider.Slider android:id="@+id/band14000"
-                    android:layout_width="match_parent" android:layout_height="80dp"
-                    android:valueFrom="-15" android:valueTo="15" android:value="0"
+
+            <!-- 3.6kHz -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="3.6kHz"
+                    android:textColor="#6a6055"
+                    android:textSize="9sp"
+                    android:gravity="center" />
+
+                <com.google.android.material.slider.Slider
+                    android:id="@+id/band3600"
+                    android:layout_width="match_parent"
+                    android:layout_height="80dp"
+                    android:valueFrom="-15"
+                    android:valueTo="15"
+                    android:value="0"
                     android:rotation="270"
-                    app:thumbColor="#c9a84c" app:trackColorActive="#c9a84c"/>
+                    app:thumbColor="#c9a84c"
+                    app:trackColorActive="#c9a84c" />
             </LinearLayout>
+
+            <!-- 14kHz -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="14kHz"
+                    android:textColor="#6a6055"
+                    android:textSize="9sp"
+                    android:gravity="center" />
+
+                <com.google.android.material.slider.Slider
+                    android:id="@+id/band14000"
+                    android:layout_width="match_parent"
+                    android:layout_height="80dp"
+                    android:valueFrom="-15"
+                    android:valueTo="15"
+                    android:value="0"
+                    android:rotation="270"
+                    app:thumbColor="#c9a84c"
+                    app:trackColorActive="#c9a84c" />
+            </LinearLayout>
+
         </LinearLayout>
 
         <!-- Volume Boost -->
-        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:text="VOLUME BOOST" android:textColor="#6a6055" android:textSize="9sp"
-            android:letterSpacing="0.15" android:layout_marginTop="10dp" android:layout_marginBottom="4dp"/>
-        <com.google.android.material.slider.Slider android:id="@+id/sliderVolumeBoost"
-            android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:valueFrom="0" android:valueTo="1500" android:value="0"
-            app:thumbColor="#c9a84c" app:trackColorActive="#c9a84c"/>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="VOLUME BOOST"
+            android:textColor="#6a6055"
+            android:textSize="9sp"
+            android:letterSpacing="0.15"
+            android:layout_marginTop="10dp"
+            android:layout_marginBottom="4dp" />
+
+        <com.google.android.material.slider.Slider
+            android:id="@+id/sliderVolumeBoost"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:valueFrom="0"
+            android:valueTo="1500"
+            android:value="0"
+            app:thumbColor="#c9a84c"
+            app:trackColorActive="#c9a84c" />
 
         <!-- Virtual Surround -->
-        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:text="VIRTUAL SURROUND" android:textColor="#6a6055" android:textSize="9sp"
-            android:letterSpacing="0.15" android:layout_marginBottom="4dp"/>
-        <com.google.android.material.slider.Slider android:id="@+id/sliderSurround"
-            android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:valueFrom="0" android:valueTo="1000" android:value="0"
-            app:thumbColor="#c9a84c" app:trackColorActive="#c9a84c"/>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="VIRTUAL SURROUND"
+            android:textColor="#6a6055"
+            android:textSize="9sp"
+            android:letterSpacing="0.15"
+            android:layout_marginBottom="4dp" />
+
+        <com.google.android.material.slider.Slider
+            android:id="@+id/sliderSurround"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:valueFrom="0"
+            android:valueTo="1000"
+            android:value="0"
+            app:thumbColor="#c9a84c"
+            app:trackColorActive="#c9a84c" />
 
         <!-- Bass Boost -->
-        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:text="BASS BOOST" android:textColor="#6a6055" android:textSize="9sp"
-            android:letterSpacing="0.15" android:layout_marginBottom="4dp"/>
-        <com.google.android.material.slider.Slider android:id="@+id/sliderBassBoost"
-            android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:valueFrom="0" android:valueTo="1000" android:value="0"
-            app:thumbColor="#c9a84c" app:trackColorActive="#c9a84c"/>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="BASS BOOST"
+            android:textColor="#6a6055"
+            android:textSize="9sp"
+            android:letterSpacing="0.15"
+            android:layout_marginBottom="4dp" />
+
+        <com.google.android.material.slider.Slider
+            android:id="@+id/sliderBassBoost"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:valueFrom="0"
+            android:valueTo="1000"
+            android:value="0"
+            app:thumbColor="#c9a84c"
+            app:trackColorActive="#c9a84c" />
 
     </LinearLayout>
+
 </ScrollView>
