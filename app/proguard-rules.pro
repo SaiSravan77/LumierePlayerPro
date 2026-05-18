@@ -1,0 +1,6 @@
+-keep class com.lumiere.player.** { *; }
+-keep class androidx.media3.** { *; }
+-keep class com.google.mediapipe.** { *; }
+-keep class org.tensorflow.** { *; }
+-dontwarn com.google.mediapipe.**
+-dontwarn org.tensorflow.**
