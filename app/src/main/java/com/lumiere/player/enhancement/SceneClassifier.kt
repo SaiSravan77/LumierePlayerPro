@@ -65,7 +65,6 @@ class SceneClassifier(private val context: Context) {
 
     fun processFrame(bitmap: Bitmap) {
         frameCounter++
-        if (frameCounter % CLASSIFY_EVERY_N != 0) return
 
         scope.launch {
             currentScene = if (interpreter != null) {
