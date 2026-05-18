@@ -307,53 +307,51 @@ class MainActivity : AppCompatActivity() {
     // ─── EQ PANEL ────────────────────────────────────────────
 
     private fun setupEqPanel() {
-        val eq = playerManager.equalizer
-        if (eq == null) {
-            binding.eqPanel.tvEqWarning.visibility = View.VISIBLE
-            return
-        }
-        binding.eqPanel.tvEqWarning.visibility = View.GONE
+        val eq = playerManager.equalizer ?: return
+        val bands = listOf(binding.eqPanel.band60, binding.eqPanel.band230,
+            binding.eqPanel.band910, binding.eqPanel.band3600, binding.eqPanel.band14000)
+        val labels = listOf("60Hz","230Hz","910Hz","3.6kHz","14kHz")
 
-        binding.eqPanel.switchEq.isChecked = eq.isEnabled
-        binding.eqPanel.switchEq.setOnCheckedChangeListener { _, c -> eq.setEqEnabled(c) }
-
-        val min = eq.getMinBandLevel()
-        val max = eq.getMaxBandLevel()
-
-        val sliders = listOf(
-            binding.eqPanel.sliderBand1, binding.eqPanel.sliderBand2,
-            binding.eqPanel.sliderBand3, binding.eqPanel.sliderBand4,
-            binding.eqPanel.sliderBand5
-        )
-
-        sliders.forEachIndexed { i, slider ->
-            slider.valueFrom = min
-            slider.valueTo = max
-            slider.value = eq.bandLevels[i].coerceIn(min, max)
-            slider.addOnChangeListener { _, value, _ -> eq.setBand(i, value) }
+        bands.forEachIndexed { i, slider ->
+            val min = eq.getMinBandLevel(); val max = eq.getMaxBandLevel()
+            slider.valueFrom = min; slider.valueTo = max; slider.value = 0f
+            slider.addOnChangeListener { _, value, fromUser -> if (fromUser) eq.setBand(i, value) }
         }
 
-        binding.eqPanel.sliderVolume.addOnChangeListener { _, v, _ -> eq.setVolumeBoost(v.toInt()) }
-        binding.eqPanel.sliderSurround.addOnChangeListener { _, v, _ -> eq.setVirtualSurround(v.toInt()) }
-        binding.eqPanel.sliderBass.addOnChangeListener { _, v, _ -> eq.setBassBoost(v.toInt()) }
+        // EQ presets
+        AudioEqualizer.ALL_PRESETS.forEach { (name, levels) ->
+            val chip = layoutInflater.inflate(R.layout.preset_chip, binding.eqPanel.eqPresetsRow, false) as TextView
+            chip.text = name
+            chip.setOnClickListener {
+                eq.applyPreset(levels)
+                bands.forEachIndexed { i, s -> s.value = levels[i].coerceIn(s.valueFrom, s.valueTo) }
+            }
+            binding.eqPanel.eqPresetsRow.addView(chip)
+        }
 
-        binding.eqPanel.btnEqPreset.setOnClickListener {
-            val names = AudioEqualizer.ALL_PRESETS.map { it.first }.toTypedArray()
-            android.app.AlertDialog.Builder(this, R.style.DialogDark)
-                .setTitle("EQ Preset")
-                .setItems(names) { _, which ->
-                    eq.applyPreset(AudioEqualizer.ALL_PRESETS[which].second)
-                    sliders.forEachIndexed { i, s -> s.value = eq.bandLevels[i].coerceIn(min, max) }
-                }.show()
+        // Volume boost
+        binding.eqPanel.sliderVolumeBoost.addOnChangeListener { _, v, fromUser ->
+            if (fromUser) eq.setVolumeBoost(v.toInt())
+        }
+
+        // Surround
+        binding.eqPanel.sliderSurround.addOnChangeListener { _, v, fromUser ->
+            if (fromUser) eq.setVirtualSurround(v.toInt())
+        }
+
+        // Bass boost
+        binding.eqPanel.sliderBassBoost.addOnChangeListener { _, v, fromUser ->
+            if (fromUser) eq.setBassBoost(v.toInt())
         }
     }
 
     // ─── DIALOGS ─────────────────────────────────────────────
 
     private fun showSpeedDialog() {
-        val speeds = floatArrayOf(0.25f, 0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 1.75f, 2.0f)
-        val labels = speeds.map { "${it}×" }.toTypedArray()
-        val current = speeds.indexOf(playbackSpeed).takeIf { it >= 0 } ?: 3
+        val speeds = listOf(0.25f, 0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 1.75f, 2.0f)
+        val labels = speeds.map { if (it == 1.0f) "Normal" else "${it}x" }.toTypedArray()
+        val current = speeds.indexOfFirst { it == playbackSpeed }.takeIf { it >= 0 } ?: 3
+
         android.app.AlertDialog.Builder(this, R.style.DialogDark)
             .setTitle("Playback Speed")
             .setSingleChoiceItems(labels, current) { dialog, which ->
@@ -594,8 +592,6 @@ class MainActivity : AppCompatActivity() {
         handler.removeCallbacksAndMessages(null)
         playerManager.release()
     }
-
-
 
     private fun setupAIExtraction() {
         lifecycleScope.launch {
