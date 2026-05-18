@@ -46,7 +46,6 @@ class FaceEnhancementManager(private val context: Context) {
 
     fun processFrame(bitmap: Bitmap, frameWidth: Int, frameHeight: Int) {
         frameCounter++
-        if (frameCounter % DETECT_EVERY_N != 0) return
         val det = detector ?: return
 
         scope.launch {
