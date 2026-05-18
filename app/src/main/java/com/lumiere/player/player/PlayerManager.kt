@@ -13,6 +13,7 @@ class PlayerManager(private val context: Context) {
     lateinit var player: ExoPlayer
     private lateinit var trackSelector: DefaultTrackSelector
 
+    var mediaSession: androidx.media3.session.MediaSession? = null
     val params = EnhanceParams()
     private var videoEffect: LumiereVideoEffect? = null
     var faceManager: FaceEnhancementManager? = null
@@ -68,6 +69,8 @@ class PlayerManager(private val context: Context) {
             }
         }
 
+        mediaSession = androidx.media3.session.MediaSession.Builder(context, player).build()
+
         // Init AI components
         faceManager = FaceEnhancementManager(context).apply { init() }
         sceneClassifier = SceneClassifier(context).apply { init() }
@@ -120,9 +123,10 @@ class PlayerManager(private val context: Context) {
         val tracks = player.currentTracks
         val audioGroups = tracks.groups.filter { it.type == C.TRACK_TYPE_AUDIO }
         if (index < audioGroups.size) {
+            val trackGroup = audioGroups[index].mediaTrackGroup
             trackSelector.setParameters(
                 trackSelector.buildUponParameters()
-                    .setTrackTypeDisabled(C.TRACK_TYPE_AUDIO, false)
+                    .setOverrideForType(TrackSelectionOverride(trackGroup, 0))
             )
         }
     }
@@ -185,6 +189,7 @@ class PlayerManager(private val context: Context) {
 
     fun release() {
         scope.cancel()
+        mediaSession?.release()
         equalizer?.release()
         faceManager?.release()
         sceneClassifier?.release()
