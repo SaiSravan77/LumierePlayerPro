@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Lumière Player</string>
+    <string name="open_file">Open File</string>
+    <string name="settings">Settings</string>
+    <string name="library">Library</string>
+    <string name="enhance">Enhance</string>
+    <string name="equalizer">Equalizer</string>
+    <string name="no_file">No video loaded</string>
+    <string name="screenshot_saved">Screenshot saved to gallery</string>
+    <string name="screenshot_failed">Screenshot failed</string>
+    <string name="permission_required">Storage permission required to open videos</string>
+    <string name="no_audio_tracks">No additional audio tracks found</string>
+    <string name="playback_speed">Playback Speed</string>
+    <string name="subtitles">Subtitles</string>
+    <string name="audio_track">Audio Track</string>
+    <string name="sub_off">Off</string>
+    <string name="sub_external">Load external (.srt, .ass, .vtt)</string>
+</resources>
