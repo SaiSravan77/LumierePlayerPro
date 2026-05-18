@@ -1,635 +1,96 @@
-package com.lumiere.player.ui
+package com.saisravan.lumiereplayerpro;
 
-import android.app.PictureInPictureParams
-import android.content.Intent
-import android.content.pm.PackageManager
-import android.graphics.Bitmap
-import android.net.Uri
-import android.os.Build
-import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
-import android.util.Rational
-import android.view.*
-import android.widget.*
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
-import androidx.lifecycle.lifecycleScope
-import androidx.media3.common.Player
-import com.google.android.material.bottomsheet.BottomSheetDialog
-import com.google.android.material.slider.Slider
-import com.lumiere.player.R
-import com.lumiere.player.databinding.ActivityMainBinding
-import com.lumiere.player.db.LumiereDatabase
-import com.lumiere.player.db.WatchHistory
-import com.lumiere.player.enhancement.AudioEqualizer
-import com.lumiere.player.enhancement.EnhanceParams
-import com.lumiere.player.enhancement.SceneClassifier
-import com.lumiere.player.player.PlayerManager
-import com.lumiere.player.utils.*
-import kotlinx.coroutines.*
+import android.Manifest;
+import android.content.ContentUris;
+import android.content.pm.PackageManager;
+import android.database.Cursor;
+import android.net.Uri;
+import android.os.Build;
+import android.os.Bundle;
+import android.provider.MediaStore;
+import android.widget.Toast;
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+import java.util.ArrayList;
+import java.util.List;
 
-class MainActivity : AppCompatActivity() {
+public class MainActivity extends AppCompatActivity {
 
-    private fun setupBackPress() {
-        onBackPressedDispatcher.addCallback(this, object : androidx.activity.OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() {
-                when {
-                    enhancePanelVisible -> toggleEnhancePanel()
-                    eqPanelVisible      -> toggleEqPanel()
-                    isFullscreen        -> toggleFullscreen()
-                    else -> {
-                        isEnabled = false
-                        onBackPressedDispatcher.onBackPressed()
-                    }
-                }
-            }
-        })
-    }
+    private RecyclerView recyclerView;
+    private List<VideoModel> videoList = new ArrayList<>();
+    private static final int REQ_CODE = 101;
 
-    private lateinit var binding: ActivityMainBinding
-    private lateinit var playerManager: PlayerManager
-    private lateinit var gestureController: GestureController
-    private val handler = Handler(Looper.getMainLooper())
-    private val db by lazy { LumiereDatabase.getInstance(this) }
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
 
-    private var controlsVisible = false
-    private var isFullscreen = false
-    private var currentUri: Uri? = null
-    private var playbackSpeed = 1.0f
-    private var aspectRatioIndex = 0
-    private val aspectRatios = listOf("Fit", "Fill", "Stretch", "16:9", "Zoom")
+        recyclerView = findViewById(R.id.recyclerView);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
-    // Panels
-    private var enhancePanelVisible = false
-    private var eqPanelVisible = false
-
-    // Auto-hide
-    private val hideControlsRunnable = Runnable { if (playerManager.player.isPlaying) hideControls() }
-
-    // File picker
-    private val filePicker = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        uri?.let { loadVideo(it) }
-    }
-    private val multiFilePicker = registerForActivityResult(ActivityResultContracts.GetMultipleContents()) { uris ->
-        if (uris.isNotEmpty()) {
-            playerManager.loadPlaylist(uris)
-            currentUri = uris.first()
-            showVideoUI()
-        }
-    }
-    private val subtitlePicker = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        uri?.let { playerManager.addExternalSubtitle(it) }
-    }
-
-    private val permLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { results ->
-        if (results.values.any { it }) filePicker.launch("video/*") else
-            Toast.makeText(this, "Storage permission required", Toast.LENGTH_SHORT).show()
-    }
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        binding = ActivityMainBinding.inflate(layoutInflater)
-        setContentView(binding.root)
-        hideSystemUI()
-
-        playerManager = PlayerManager(this).apply { init() }
-        binding.playerView.player = playerManager.player
-
-        setupPlayerCallbacks()
-        setupControls()
-        setupGestures()
-        setupEnhancePanel()
-        setupEqPanel()
-        setupBackPress()
-        setupAIExtraction()
-
-        // Handle intent (open from file manager)
-        intent?.data?.let { loadVideo(it) }
-
-        binding.emptyState.setOnClickListener { requestFileOpen() }
-    }
-
-    // â”€â”€â”€ VIDEO LOADING â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-    private fun loadVideo(uri: Uri) {
-        currentUri = uri
-        lifecycleScope.launch {
-            val history = db.watchHistoryDao().getByUri(uri.toString())
-            playerManager.loadUri(uri, history?.lastPosition ?: 0L)
-            showVideoUI()
-            // Update filename display
-            val name = uri.lastPathSegment ?: "Video"
-            binding.tvFileName.text = name
-        }
-    }
-
-    private fun showVideoUI() {
-        binding.emptyState.visibility = View.GONE
-        binding.playerView.visibility = View.VISIBLE
-        showControls()
-    }
-
-    // â”€â”€â”€ PLAYER CALLBACKS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-    private fun setupPlayerCallbacks() {
-        playerManager.onPlaybackStateChanged = { state ->
-            when (state) {
-                Player.STATE_READY   -> { updatePlayPauseIcon(playerManager.player.isPlaying); showControls() }
-                Player.STATE_ENDED   -> { updatePlayPauseIcon(false); saveWatchHistory() }
-                Player.STATE_BUFFERING -> binding.progressBar.visibility = View.VISIBLE
-                else -> {}
-            }
-            if (state != Player.STATE_BUFFERING) binding.progressBar.visibility = View.GONE
-        }
-        playerManager.onIsPlayingChanged = { isPlaying ->
-            updatePlayPauseIcon(isPlaying)
-            if (isPlaying) scheduleHideControls() else handler.removeCallbacks(hideControlsRunnable)
-        }
-        playerManager.onPositionChanged = { pos, dur ->
-            if (dur > 0) {
-                binding.seekBar.value = (pos.toFloat() / dur * 1000f).coerceIn(0f, 1000f)
-                binding.tvTime.text = "${formatTime(pos)} / ${formatTime(dur)}"
-            }
-        }
-        playerManager.onError = { error ->
-            Toast.makeText(this, "Playback error: ${error.message}", Toast.LENGTH_LONG).show()
-        }
-    }
-
-    // â”€â”€â”€ CONTROLS SETUP â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-    private fun setupControls() {
-        // Play/Pause
-        binding.btnPlayPause.setOnClickListener { togglePlay() }
-        // Skip
-        binding.btnSkipBack.setOnClickListener { playerManager.player.seekTo((playerManager.player.currentPosition - 10000).coerceAtLeast(0)); showControls() }
-        binding.btnSkipFwd.setOnClickListener  { playerManager.player.seekTo(playerManager.player.currentPosition + 10000); showControls() }
-        // Prev/Next
-        binding.btnPrev.setOnClickListener { playerManager.skipToPrevious() }
-        binding.btnNext.setOnClickListener { playerManager.skipToNext() }
-        // Seek bar
-        binding.seekBar.addOnChangeListener { _, value, fromUser ->
-            if (fromUser) {
-                val pos = (value / 1000f * playerManager.player.duration).toLong()
-                playerManager.player.seekTo(pos)
-            }
-        }
-        // Open file
-        binding.btnOpen.setOnClickListener { requestFileOpen() }
-        // Open playlist
-        binding.btnPlaylist.setOnClickListener { openPlaylistPicker() }
-        // Fullscreen
-        binding.btnFullscreen.setOnClickListener { toggleFullscreen() }
-        // Enhance
-        binding.btnEnhance.setOnClickListener { toggleEnhancePanel() }
-        // EQ
-        binding.btnEq.setOnClickListener { toggleEqPanel() }
-        // Speed
-        binding.btnSpeed.setOnClickListener { showSpeedDialog() }
-        // Aspect ratio
-        binding.btnAspect.setOnClickListener { cycleAspectRatio() }
-        // Audio tracks
-        binding.btnAudio.setOnClickListener { showAudioTrackDialog() }
-        // Subtitles
-        binding.btnSub.setOnClickListener { showSubtitleDialog() }
-        // Screenshot
-        binding.btnScreenshot.setOnClickListener { takeScreenshot() }
-        // Library
-        binding.btnLibrary.setOnClickListener { startActivity(Intent(this, LibraryActivity::class.java)) }
-        // Settings
-        binding.btnSettings.setOnClickListener { startActivity(Intent(this, SettingsActivity::class.java)) }
-        // Lock screen
-        binding.btnLock.setOnClickListener { toggleControlsLock() }
-    }
-
-    // â”€â”€â”€ GESTURES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-    private fun setupGestures() {
-        gestureController = GestureController(
-            context = this,
-            view = binding.playerView,
-            onSeek = { delta ->
-                val newPos = (playerManager.player.currentPosition + delta).coerceAtLeast(0)
-                playerManager.player.seekTo(newPos)
-            },
-            onVolumeChange = { delta -> gestureController.adjustSystemVolume(delta) },
-            onBrightnessChange = { delta ->
-                val cur = window.attributes.screenBrightness.takeIf { it > 0 } ?: 0.5f
-                gestureController.setScreenBrightness(this, cur + delta)
-            },
-            onSingleTap = { toggleControls() },
-            onDoubleTap = { togglePlay() },
-            onShowOverlay = { type, value, label ->
-                showGestureOverlay(label, value)
-            },
-            getCurrentPosition = { playerManager.player.currentPosition }
-        )
-
-        binding.playerView.setOnTouchListener { _, event ->
-            gestureController.onTouchEvent(event)
-            false
-        }
-    }
-
-    // â”€â”€â”€ ENHANCE PANEL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-    private fun setupEnhancePanel() {
-        val p = playerManager.params
-
-        // Master toggle
-        binding.enhancePanel.switchEnhance.isChecked = p.enabled
-        binding.enhancePanel.switchEnhance.setOnCheckedChangeListener { _, checked ->
-            p.enabled = checked
-            binding.enhanceBadge.visibility = if (checked) View.VISIBLE else View.GONE
-        }
-
-        // Face enhance
-        binding.enhancePanel.switchFace.isChecked = p.faceEnhance
-        binding.enhancePanel.switchFace.setOnCheckedChangeListener { _, c -> p.faceEnhance = c }
-
-        // Scene aware
-        binding.enhancePanel.switchScene.isChecked = p.sceneAware
-        binding.enhancePanel.switchScene.setOnCheckedChangeListener { _, c -> p.sceneAware = c }
-
-        // HDR sim
-        binding.enhancePanel.switchHdr.isChecked = p.hdrSim
-        binding.enhancePanel.switchHdr.setOnCheckedChangeListener { _, c -> p.hdrSim = c }
-
-        // Deinterlace
-        binding.enhancePanel.switchDeint.isChecked = p.deinterlace
-        binding.enhancePanel.switchDeint.setOnCheckedChangeListener { _, c -> p.deinterlace = c }
-
-        // Sliders
-        setupEnhanceSlider(binding.enhancePanel.sliderSharpness, "Sharpness", 0f, 2f, p.sharpness) { p.sharpness = it }
-        setupEnhanceSlider(binding.enhancePanel.sliderNoise, "Noise Reduction", 0f, 1f, p.noise) { p.noise = it }
-        setupEnhanceSlider(binding.enhancePanel.sliderContrast, "Contrast", 0.5f, 2f, p.contrast) { p.contrast = it }
-        setupEnhanceSlider(binding.enhancePanel.sliderBright, "Brightness", 0.5f, 2f, p.brightness) { p.brightness = it }
-        setupEnhanceSlider(binding.enhancePanel.sliderSat, "Saturation", 0f, 2f, p.saturation) { p.saturation = it }
-        setupEnhanceSlider(binding.enhancePanel.sliderWarmth, "Warmth", -1f, 1f, p.warmth) { p.warmth = it }
-        setupEnhanceSlider(binding.enhancePanel.sliderShadow, "Shadow Lift", 0f, 1f, p.shadow) { p.shadow = it }
-
-        // Presets
-        val presets = listOf("Classic 90s", "VHS", "Cinema", "Vivid", "B&W", "Neutral", "Night", "Outdoor")
-        binding.enhancePanel.btnPreset.setOnClickListener {
-            android.app.AlertDialog.Builder(this, R.style.DialogDark)
-                .setTitle("Enhancement Preset")
-                .setItems(presets.toTypedArray()) { _, which ->
-                    applyPreset(which)
-                }.show()
-        }
-    }
-
-    private fun setupEnhanceSlider(slider: Slider, label: String, min: Float, max: Float, current: Float, onChange: (Float) -> Unit) {
-        slider.valueFrom = min
-        slider.valueTo = max
-        slider.value = current.coerceIn(min, max)
-        slider.addOnChangeListener { _, value, _ -> onChange(value) }
-    }
-
-    private fun applyPreset(index: Int) {
-        val p = playerManager.params
-        p.enabled = true
-        binding.enhancePanel.switchEnhance.isChecked = true
-        when (index) {
-            0 -> { p.sharpness=0.2f; p.noise=0.3f; p.contrast=1.1f; p.saturation=0.9f; p.warmth=0.2f; p.shadow=0.1f } // Classic 90s
-            1 -> { p.sharpness=0f; p.noise=1f; p.contrast=0.9f; p.saturation=0.7f; p.warmth=0f; p.deinterlace=true } // VHS
-            2 -> { p.sharpness=0.8f; p.noise=0.1f; p.contrast=1.2f; p.saturation=1.1f; p.warmth=0.1f; p.shadow=0.2f } // Cinema
-            3 -> { p.sharpness=1.0f; p.noise=0f; p.contrast=1.3f; p.saturation=1.5f; p.warmth=0f; p.shadow=0f } // Vivid
-            4 -> { p.sharpness=0.5f; p.noise=0f; p.contrast=1.2f; p.saturation=0f; p.warmth=0f; p.shadow=0f } // B&W
-            5 -> { p.sharpness=0f; p.noise=0f; p.contrast=1f; p.saturation=1f; p.warmth=0f; p.shadow=0f } // Neutral
-            6 -> { p.sharpness=0.3f; p.noise=0.8f; p.contrast=1.1f; p.saturation=0.9f; p.warmth=-0.1f; p.shadow=0.5f } // Night
-            7 -> { p.sharpness=0.6f; p.noise=0f; p.contrast=1.1f; p.saturation=1.2f; p.warmth=0.3f; p.shadow=0.1f } // Outdoor
-        }
-        setupEnhancePanel() // Refresh UI
-    }
-
-    // â”€â”€â”€ EQ PANEL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-    private fun setupEqPanel() {
-        val eq = playerManager.equalizer ?: return
-        val bands = listOf(
-            binding.eqPanel.band60, binding.eqPanel.band230,
-            binding.eqPanel.band910, binding.eqPanel.band3600, 
-            binding.eqPanel.band14000
-        )
-        
-        bands.forEachIndexed { i, slider ->
-            val min = eq.getMinBandLevel()
-            val max = eq.getMaxBandLevel()
-            slider.valueFrom = min
-            slider.valueTo = max
-            slider.value = 0f
-            slider.addOnChangeListener { _, value, fromUser -> 
-                if (fromUser) eq.setBand(i, value) 
-            }
-        }
-
-        // EQ presets
-        binding.eqPanel.eqPresetsRow.removeAllViews()
-        AudioEqualizer.ALL_PRESETS.forEach { (name, levels) ->
-            val chip = layoutInflater.inflate(R.layout.preset_chip, binding.eqPanel.eqPresetsRow, false) as TextView
-            chip.text = name
-            chip.setOnClickListener {
-                eq.applyPreset(levels)
-                bands.forEachIndexed { i, s -> s.value = levels[i].coerceIn(s.valueFrom, s.valueTo) }
-            }
-            binding.eqPanel.eqPresetsRow.addView(chip)
-        }
-
-        // Volume boost
-        binding.eqPanel.sliderVolumeBoost.addOnChangeListener { _, v, fromUser ->
-            if (fromUser) eq.setVolumeBoost(v.toInt())
-        }
-
-        // Surround
-        binding.eqPanel.sliderSurround.addOnChangeListener { _, v, fromUser ->
-            if (fromUser) eq.setVirtualSurround(v.toInt())
-        }
-
-        // Bass boost
-        binding.eqPanel.sliderBassBoost.addOnChangeListener { _, v, fromUser ->
-            if (fromUser) eq.setBassBoost(v.toInt())
-        }
-    }
-
-    // â”€â”€â”€ DIALOGS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-    private fun showSpeedDialog() {
-        val speeds = listOf(0.25f, 0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 1.75f, 2.0f)
-        val labels = speeds.map { if (it == 1.0f) "Normal" else "${it}x" }.toTypedArray()
-        val current = speeds.indexOfFirst { it == playbackSpeed }.takeIf { it >= 0 } ?: 3
-
-        android.app.AlertDialog.Builder(this, R.style.DialogDark)
-            .setTitle("Playback Speed")
-            .setSingleChoiceItems(labels, current) { dialog, which ->
-                playbackSpeed = speeds[which]
-                playerManager.setPlaybackSpeed(playbackSpeed)
-                binding.btnSpeed.text = if (playbackSpeed == 1.0f) "1Ã—" else "${playbackSpeed}Ã—"
-                dialog.dismiss()
-            }.show()
-    }
-
-    private fun showAudioTrackDialog() {
-        val tracks = playerManager.getAudioTracks()
-        if (tracks.isEmpty()) { Toast.makeText(this, "No audio tracks found", Toast.LENGTH_SHORT).show(); return }
-        val arr = tracks.toTypedArray()
-        android.app.AlertDialog.Builder(this, R.style.DialogDark)
-            .setTitle("Audio Track")
-            .setItems(arr) { _, which -> playerManager.setAudioTrack(which) }
-            .show()
-    }
-
-    private fun showSubtitleDialog() {
-        val items = mutableListOf("Off", "Load external (.srt, .ass)")
-        items.addAll(playerManager.getSubtitleTracks())
-        android.app.AlertDialog.Builder(this, R.style.DialogDark)
-            .setTitle("Subtitles")
-            .setItems(items.toTypedArray()) { _, which ->
-                when (which) {
-                    0 -> playerManager.setSubtitleTrack(-1)
-                    1 -> subtitlePicker.launch("*/*")
-                    else -> playerManager.setSubtitleTrack(which - 2)
-                }
-            }.show()
-    }
-
-    // â”€â”€â”€ CONTROLS VISIBILITY â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-    private fun toggleControls() { if (controlsVisible) hideControls() else showControls() }
-    private fun togglePlay() {
-        val p = playerManager.player
-        if (p.isPlaying) p.pause() else p.play()
-        showControls()
-    }
-
-    private fun showControls() {
-        controlsVisible = true
-        binding.controlsOverlay.visibility = View.VISIBLE
-        binding.controlsOverlay.animate().alpha(1f).setDuration(200).start()
-        binding.bottomBar.visibility = View.VISIBLE
-        binding.bottomBar.animate().alpha(1f).setDuration(200).start()
-        scheduleHideControls()
-    }
-
-    private fun hideControls() {
-        controlsVisible = false
-        binding.controlsOverlay.animate().alpha(0f).setDuration(400).withEndAction {
-            binding.controlsOverlay.visibility = View.INVISIBLE
-        }.start()
-    }
-
-    private fun scheduleHideControls() {
-        handler.removeCallbacks(hideControlsRunnable)
-        handler.postDelayed(hideControlsRunnable, 4000)
-    }
-
-    private fun toggleEnhancePanel() {
-        enhancePanelVisible = !enhancePanelVisible
-        binding.enhancePanelContainer.visibility = if (enhancePanelVisible) View.VISIBLE else View.GONE
-        if (enhancePanelVisible) eqPanelVisible = false.also { binding.eqPanelContainer.visibility = View.GONE }
-    }
-
-    private fun toggleEqPanel() {
-        eqPanelVisible = !eqPanelVisible
-        binding.eqPanelContainer.visibility = if (eqPanelVisible) View.VISIBLE else View.GONE
-        if (eqPanelVisible) enhancePanelVisible = false.also { binding.enhancePanelContainer.visibility = View.GONE }
-    }
-
-    private var controlsLocked = false
-    private fun toggleControlsLock() {
-        controlsLocked = !controlsLocked
-        binding.btnLock.setImageResource(if (controlsLocked) R.drawable.ic_lock else R.drawable.ic_lock_open)
-        if (controlsLocked) {
-            binding.controlsRow.visibility = View.GONE
-            binding.seekBar.isEnabled = false
+        if (checkPermission()) {
+            loadVideos();
         } else {
-            binding.controlsRow.visibility = View.VISIBLE
-            binding.seekBar.isEnabled = true
+            requestPermission();
         }
     }
 
-    // â”€â”€â”€ ASPECT RATIO â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-    private fun cycleAspectRatio() {
-        aspectRatioIndex = (aspectRatioIndex + 1) % aspectRatios.size
-        binding.btnAspect.text = aspectRatios[aspectRatioIndex]
-        when (aspectRatioIndex) {
-            0 -> binding.playerView.resizeMode = androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_FIT
-            1 -> binding.playerView.resizeMode = androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_FILL
-            2 -> binding.playerView.resizeMode = androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_FIXED_WIDTH
-            3 -> binding.playerView.resizeMode = androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_FIT // Fallback for 16:9 handled by view
-            4 -> binding.playerView.resizeMode = androidx.media3.ui.AspectRatioFrameLayout.RESIZE_MODE_ZOOM
-        }
+    private boolean checkPermission() {
+        String perm = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) ? 
+                      Manifest.permission.READ_MEDIA_VIDEO : Manifest.permission.READ_EXTERNAL_STORAGE;
+        return ContextCompat.checkSelfPermission(this, perm) == PackageManager.PERMISSION_GRANTED;
     }
 
-    // â”€â”€â”€ SCREENSHOT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-    private fun takeScreenshot() {
-        lifecycleScope.launch {
-            try {
-                val view = binding.playerView.videoSurfaceView as? SurfaceView ?: binding.playerView
-                val bitmap = Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
-                val canvas = android.graphics.Canvas(bitmap)
-                view.draw(canvas)
-                val uri = ScreenshotHelper.saveFrame(this@MainActivity, bitmap)
-                withContext(Dispatchers.Main) {
-                    if (uri != null) Toast.makeText(this@MainActivity, "Screenshot saved", Toast.LENGTH_SHORT).show()
-                    else Toast.makeText(this@MainActivity, "Screenshot failed", Toast.LENGTH_SHORT).show()
-                }
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(this@MainActivity, "Screenshot error: ${e.message}", Toast.LENGTH_SHORT).show()
-                }
-            }
-        }
+    private void requestPermission() {
+        String perm = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) ? 
+                      Manifest.permission.READ_MEDIA_VIDEO : Manifest.permission.READ_EXTERNAL_STORAGE;
+        ActivityCompat.requestPermissions(this, new String[]{perm}, REQ_CODE);
     }
 
-    // â”€â”€â”€ PICTURE IN PICTURE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-    override fun onUserLeaveHint() {
-        super.onUserLeaveHint()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && playerManager.player.isPlaying) {
-            val rational = Rational(16, 9)
-            val params = PictureInPictureParams.Builder().setAspectRatio(rational).build()
-            enterPictureInPictureMode(params)
-        }
-    }
-
-    // â”€â”€â”€ FULLSCREEN â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-    private fun toggleFullscreen() {
-        isFullscreen = !isFullscreen
-        if (isFullscreen) hideSystemUI() else showSystemUI()
-        binding.btnFullscreen.setImageResource(
-            if (isFullscreen) R.drawable.ic_fullscreen_exit else R.drawable.ic_fullscreen
-        )
-    }
-
-    private fun hideSystemUI() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            window.insetsController?.apply {
-                hide(WindowInsets.Type.systemBars())
-                systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-            }
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == REQ_CODE && grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            loadVideos();
         } else {
-            @Suppress("DEPRECATION")
-            window.decorView.systemUiVisibility = (
-                View.SYSTEM_UI_FLAG_FULLSCREEN or
-                View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
-                View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-            )
+            Toast.makeText(this, "Permission Required to show videos", Toast.LENGTH_SHORT).show();
         }
     }
 
-    private fun showSystemUI() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
-            window.insetsController?.show(WindowInsets.Type.systemBars())
-        else {
-            @Suppress("DEPRECATION")
-            window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
-        }
-    }
+    private void loadVideos() {
+        Uri collection = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) ?
+                MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL) :
+                MediaStore.Video.Media.EXTERNAL_CONTENT_URI;
 
-    // â”€â”€â”€ OVERLAY â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        String[] projection = new String[]{
+                MediaStore.Video.Media._ID,
+                MediaStore.Video.Media.DISPLAY_NAME,
+                MediaStore.Video.Media.DURATION,
+                MediaStore.Video.Media.SIZE
+        };
 
-    private fun showGestureOverlay(label: String, value: Float) {
-        binding.gestureOverlay.tvOverlayLabel.text = label
-        binding.gestureOverlay.progressOverlay.progress = (value * 100).toInt().coerceIn(0, 100)
-        binding.gestureOverlay.root.visibility = View.VISIBLE
-        binding.gestureOverlay.root.alpha = 1f
-        handler.removeCallbacksAndMessages("overlay")
-        handler.postDelayed({
-            binding.gestureOverlay.root.animate().alpha(0f).setDuration(300).withEndAction {
-                binding.gestureOverlay.root.visibility = View.GONE
-            }.start()
-        }, 800)
-    }
+        try (Cursor cursor = getContentResolver().query(collection, projection, null, null, null)) {
+            if (cursor != null) {
+                int idCol = cursor.getColumnIndexOrThrow(MediaStore.Video.Media._ID);
+                int nameCol = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DISPLAY_NAME);
+                int durCol = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DURATION);
+                int sizeCol = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.SIZE);
 
-    // â”€â”€â”€ HELPERS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+                while (cursor.moveToNext()) {
+                    long id = cursor.getLong(idCol);
+                    String name = cursor.getString(nameCol);
+                    int duration = cursor.getInt(durCol);
+                    int size = cursor.getInt(sizeCol);
+                    Uri contentUri = ContentUris.withAppendedId(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, id);
 
-    private fun updatePlayPauseIcon(isPlaying: Boolean) {
-        binding.btnPlayPause.setImageResource(if (isPlaying) R.drawable.ic_pause else R.drawable.ic_play)
-    }
-
-    private fun formatTime(ms: Long): String {
-        val s = ms / 1000; val m = s / 60; val h = m / 60
-        return if (h > 0) "%d:%02d:%02d".format(h, m % 60, s % 60) else "%d:%02d".format(m, s % 60)
-    }
-
-    private fun requestFileOpen() {
-        val perms = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
-            arrayOf(android.Manifest.permission.READ_MEDIA_VIDEO)
-        else arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE)
-
-        if (perms.all { ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED })
-            filePicker.launch("video/*")
-        else permLauncher.launch(perms)
-    }
-
-    private fun openPlaylistPicker() { multiFilePicker.launch("video/*") }
-
-    private fun saveWatchHistory() {
-        if (!::playerManager.isInitialized) return
-        val uri = currentUri ?: return
-        lifecycleScope.launch(Dispatchers.IO) {
-            db.watchHistoryDao().upsert(WatchHistory(
-                uriString    = uri.toString(),
-                fileName     = uri.lastPathSegment ?: "Video",
-                lastPosition = playerManager.player.currentPosition,
-                duration     = playerManager.player.duration
-            ))
-        }
-    }
-
-    // â”€â”€â”€ LIFECYCLE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-
-    override fun onPause() {
-        super.onPause()
-        saveWatchHistory()
-        if (::playerManager.isInitialized && !isInPictureInPictureMode) playerManager.player.pause()
-    }
-
-    override fun onResume() {
-        super.onResume()
-        hideSystemUI()
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        handler.removeCallbacksAndMessages(null)
-        if (::playerManager.isInitialized) playerManager.release()
-    }
-
-    private fun setupAIExtraction() {
-        lifecycleScope.launch {
-            while (isActive) {
-                delay(1000)
-                if (::playerManager.isInitialized && playerManager.player.isPlaying && (playerManager.params.faceEnhance || playerManager.params.sceneAware)) {
-                    extractFrameForAI()
+                    videoList.add(new VideoModel(name, contentUri, duration, size));
                 }
-            }
-        }
-    }
-
-    private fun extractFrameForAI() {
-        val surfaceView = binding.playerView.videoSurfaceView as? SurfaceView ?: return
-        if (surfaceView.holder.surface.isValid && surfaceView.width > 0 && surfaceView.height > 0) {
-            val bitmap = Bitmap.createBitmap(surfaceView.width, surfaceView.height, Bitmap.Config.ARGB_8888)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                android.view.PixelCopy.request(surfaceView, bitmap, { result ->
-                    if (result == android.view.PixelCopy.SUCCESS) {
-                        if (playerManager.params.faceEnhance) {
-                            playerManager.faceManager?.processFrame(bitmap, bitmap.width, bitmap.height)
-                            playerManager.updateShaderFaces(playerManager.faceManager?.lastFaceRegions ?: emptyArray())
-                        }
-                        if (playerManager.params.sceneAware) {
-                            playerManager.sceneClassifier?.processFrame(bitmap)
-                            playerManager.updateShaderScene(playerManager.sceneClassifier?.currentScene ?: 0)
-                        }
-                    }
-                }, Handler(Looper.getMainLooper()))
+                VideoAdapter adapter = new VideoAdapter(this, videoList);
+                recyclerView.setAdapter(adapter);
             }
         }
     }
