@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory android:title="Playback" app:iconSpaceReserved="false">
+        <SwitchPreferenceCompat
+            android:key="resume_playback"
+            android:title="Resume playback"
+            android:summary="Continue from where you left off"
+            android:defaultValue="true"/>
+        <SwitchPreferenceCompat
+            android:key="pip_on_exit"
+            android:title="Picture-in-picture on exit"
+            android:summary="Float player when switching apps"
+            android:defaultValue="true"/>
+        <ListPreference
+            android:key="default_speed"
+            android:title="Default playback speed"
+            android:entries="@array/speed_entries"
+            android:entryValues="@array/speed_values"
+            android:defaultValue="1.0"/>
+        <ListPreference
+            android:key="default_aspect"
+            android:title="Default aspect ratio"
+            android:entries="@array/aspect_entries"
+            android:entryValues="@array/aspect_values"
+            android:defaultValue="fit"/>
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="Enhancement" app:iconSpaceReserved="false">
+        <SwitchPreferenceCompat
+            android:key="enhance_default"
+            android:title="Enable 4K Remaster by default"
+            android:defaultValue="true"/>
+        <SwitchPreferenceCompat
+            android:key="face_enhance_default"
+            android:title="Face enhancement by default"
+            android:defaultValue="true"/>
+        <SwitchPreferenceCompat
+            android:key="scene_aware_default"
+            android:title="Scene-aware enhancement by default"
+            android:defaultValue="true"/>
+        <ListPreference
+            android:key="default_preset"
+            android:title="Default preset"
+            android:entries="@array/preset_entries"
+            android:entryValues="@array/preset_values"
+            android:defaultValue="classic_90s"/>
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="Gestures" app:iconSpaceReserved="false">
+        <SwitchPreferenceCompat
+            android:key="gesture_seek"
+            android:title="Swipe to seek"
+            android:defaultValue="true"/>
+        <SwitchPreferenceCompat
+            android:key="gesture_volume"
+            android:title="Swipe for volume"
+            android:defaultValue="true"/>
+        <SwitchPreferenceCompat
+            android:key="gesture_brightness"
+            android:title="Swipe for brightness"
+            android:defaultValue="true"/>
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="Subtitles" app:iconSpaceReserved="false">
+        <ListPreference
+            android:key="subtitle_size"
+            android:title="Subtitle text size"
+            android:entries="@array/subtitle_size_entries"
+            android:entryValues="@array/subtitle_size_values"
+            android:defaultValue="medium"/>
+        <SwitchPreferenceCompat
+            android:key="subtitle_bold"
+            android:title="Bold subtitles"
+            android:defaultValue="false"/>
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="About" app:iconSpaceReserved="false">
+        <Preference
+            android:key="version"
+            android:title="Version"
+            android:summary="2.0 — Lumière Player Pro"/>
+        <Preference
+            android:key="engine"
+            android:title="Enhancement Engine"
+            android:summary="ExoPlayer Media3 · MediaPipe · TensorFlow Lite · OpenGL ES 2.0"/>
+    </PreferenceCategory>
+
+</PreferenceScreen>
