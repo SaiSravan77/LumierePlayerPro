@@ -308,17 +308,25 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupEqPanel() {
         val eq = playerManager.equalizer ?: return
-        val bands = listOf(binding.eqPanel.band60, binding.eqPanel.band230,
-            binding.eqPanel.band910, binding.eqPanel.band3600, binding.eqPanel.band14000)
-        val labels = listOf("60Hz","230Hz","910Hz","3.6kHz","14kHz")
-
+        val bands = listOf(
+            binding.eqPanel.band60, binding.eqPanel.band230,
+            binding.eqPanel.band910, binding.eqPanel.band3600, 
+            binding.eqPanel.band14000
+        )
+        
         bands.forEachIndexed { i, slider ->
-            val min = eq.getMinBandLevel(); val max = eq.getMaxBandLevel()
-            slider.valueFrom = min; slider.valueTo = max; slider.value = 0f
-            slider.addOnChangeListener { _, value, fromUser -> if (fromUser) eq.setBand(i, value) }
+            val min = eq.getMinBandLevel()
+            val max = eq.getMaxBandLevel()
+            slider.valueFrom = min
+            slider.valueTo = max
+            slider.value = 0f
+            slider.addOnChangeListener { _, value, fromUser -> 
+                if (fromUser) eq.setBand(i, value) 
+            }
         }
 
         // EQ presets
+        binding.eqPanel.eqPresetsRow.removeAllViews()
         AudioEqualizer.ALL_PRESETS.forEach { (name, levels) ->
             val chip = layoutInflater.inflate(R.layout.preset_chip, binding.eqPanel.eqPresetsRow, false) as TextView
             chip.text = name
